@@ -1,0 +1,150 @@
+// Copyright (c) 2019 ml5
+//
+// This software is released under the MIT License.
+// https://opensource.org/licenses/MIT
+ 
+/* ===
+ml5 Example
+PoseNet example using p5.js
+=== */
+ 
+let leftScore = 0;
+let rightScore = 0;
+let video;
+let poseNet;
+let poses = [];
+
+ 
+var ballx, bally;
+var vx, vy;
+var leftPaddle;
+var rightPaddle;
+var txtSize =10;
+var dots = []
+var dSize = 10; 
+ 
+function setup() {
+  createCanvas(640, 480);
+  video = createCapture(VIDEO);
+  video.size(width, height);
+ 
+  // Create a new poseNet method with a single detection
+  poseNet = ml5.poseNet(video, modelReady);
+  // This sets up an event that fills the global variable "poses"
+  // with an array every time new poses are detected
+  poseNet.on('pose', function(results) {
+    poses = results;
+  });
+  // Hide the video element, and just show the canvas
+  video.hide();
+  
+    for(let y= dSize/2; y<height; y+=dSize*2){
+    dots.push(createVector(width/2 - dSize/2,y));
+  }
+ 
+  ballx = width / 2;
+  bally = height / 2;
+  vx = 3;
+  vy = 1.2;
+  
+  leftPaddle = height / 2;
+  rightPaddle = height / 2;
+ 
+  rectMode(CENTER);
+}
+ 
+function modelReady() {
+  select('#status').html('Model Loaded');
+}
+ 
+
+function draw() {
+  image(video, 0, 0, width, height);
+  
+  // drawSquares()
+  
+let x1 = width/4;
+let x2 = width*3/4;
+let y1 = txtSize*5;
+  
+  stroke(0);
+  fill(255);
+  textAlign(CENTER);
+  textSize(20);
+  text('Left Score', x1, txtSize*2);
+  text('Right Score', x2, txtSize*2);
+  text(leftScore, x1, y1);
+  text(rightScore, x2, y1);
+
+  for(let i = 0;i < dots.length; i++){
+    let dotx = dots[i].x;
+    let doty = dots[i].y;
+    
+    rect(dotx,doty,dSize,dSize);
+  }
+  
+  // fill(255);
+  rect(20, leftPaddle, 10, 50);
+  rect(width-20, rightPaddle, 10, 50);
+
+  ellipse(ballx, bally, 20);
+ 
+  ballx = ballx + vx;
+  bally = bally + vy;
+ 
+  if (bally < 10) {
+    vy = -vy;
+  }
+  if (bally > height-10) {
+    vy = -vy;
+  }
+  if (ballx < 35) {
+    if (bally < leftPaddle+25 && bally > leftPaddle-25) {
+      vx = -vx;
+      
+    } else{
+     rightScore ++;
+     vx = -vx;// game over
+    }
+  }
+  if (ballx > width - 35) {
+    if (bally < rightPaddle+25 && bally > rightPaddle-25) {
+      vx = -vx;
+    } else {
+    leftScore ++; 
+    vx = -vx;// game over
+    }
+  }
+  
+  if (leftScore == 10) {
+  text ('you lose!',width-2*width/10, 60);
+  noLoop();
+  }
+  
+  if (rightScore == 10) {
+  text ('you lose!', width/10,60);
+  noLoop();
+  }
+
+
+  for(var i = 0 ; i < poses.length; i++){
+
+    if (poses.length < 2) {
+    // if (0 < poses[0].pose.nose.x < width/2); { 
+  leftPaddle = rightPaddle = poses[0].pose.nose.y;
+    // }
+  }
+  
+  
+  if (poses.length >= 2){
+  if (poses[0].pose.nose.x > poses[1].pose.nose.x);{
+    rightPaddle = poses[0].pose.nose.y;
+    leftPaddle = poses[1].pose.nose.y;
+  }
+    if (poses[0].pose.nose.x < poses[1].pose.nose.x) {
+    rightPaddle = poses[1].pose.nose.y;
+    leftPaddle = poses[0].pose.nose.y;
+    }
+  }  
+  }
+}
